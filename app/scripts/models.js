@@ -4,9 +4,9 @@ var Recipe = Parse.Object.extend("Recipe", {
   totalWieght: function(){}
 });
 
-var Ingrediant = Parse.Object.extend("Ingrediant");
+var Ingredient = Parse.Object.extend("Ingredient");
 
 module.exports = {
   'Recipe': Recipe,
-  'Ingrediant': Ingrediant
+  'Ingredient': Ingredient
 };

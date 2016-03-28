@@ -33,6 +33,16 @@ var AddRecipeView = React.createClass({
       success: function(recipe) {
         // Execute any logic that should take place after the object is saved.
         alert('New object created with objectId: ' + recipe.id);
+        var recipeIngredients = [];
+
+        ingredients.map(function(ingredient){
+          var ing = new models.Ingredient();
+          ing.set('name': ingredient.name);
+          ing.set('recipe': recipe);
+          recipeIngredients.push(ing);
+        });
+
+        Parse.Object.saveAll(recipeIngredients);
         router.navigate('recipes/', {trigger: true});
       },
       error: function(recipe, error) {
@@ -47,6 +57,9 @@ var AddRecipeView = React.createClass({
       <form onSubmit={this.handleSubmit}>
         <Input type="text" label="Recipe Title" placeholder="Enter title" valueLink={this.linkState('title')} />
         <Input type="textarea" label="Recipe Notes" placeholder="Enter notes" valueLink={this.linkState('notes')} />
+
+        <p>Ingrediants</p>
+
         <ButtonInput type="submit" value="Add Recipe" />
       </form>
     );
@@ -61,7 +74,7 @@ var RecipeListView = React.createClass({
     // Subscribe to all Recipe objects, ordered by creation date
     // The results will be available at this.data.recipes
     return {
-      recipes: (new Parse.Query('Recipe')).ascending('createdAt')
+      recipes: (new Parse.Query('Recipe')).descending('createdAt')
     };
   },
 
@@ -69,7 +82,7 @@ var RecipeListView = React.createClass({
     return (
         <ul>
           {this.data.recipes.map(function(recipe) {
-            return <li key={recipe.id}>{recipe.title}</li>;
+            return <li key={recipe.id}>{recipe.title}:: {recipe.notes}</li>;
           })}
         </ul>
       );
