@@ -1,49 +1,36 @@
 var Backbone = require('backbone');
 var React = require('react');
 var ReactDOM = require('react-dom');
+var Parse = require('parse');
 
-var IndexComponent = require('./compoents/index.jsx').IndexComponent;
+var AddRecipeView = require('./components/index.jsx').AddRecipeView;
+var RecipeListView = require('./components/index.jsx').RecipeListView;
 
 var appContainer = document.getElementById('app');
 
 var Router = Backbone.Router.extend({
   routes: {
-      '': 'index', // recipe list
-      // 'recipe/create': 'newRecipe',
-      // 'recipe/:id': 'recipe',
-      // 'recipe/:id/edit': 'recipeEdit',
-      // 'recipe/:id/delete': 'recipeDelete',
-      // 'recipe/category(/:type)': 'type',
-      // 'recipe/category': 'type',
-      // 'login': 'login',
-      // 'profile/:id': 'profile',
-      // '*notFound': 'catch'
-    },
-
+    '': 'index', // recipe add
+    'recipes/': 'recipes',  // recipe list
+  },
   index: function(){
+    var self = this;
+
     ReactDOM.unmountComponentAtNode(appContainer);
 
     ReactDOM.render(
-      React.createElement(IndexComponent),
+      React.createElement(AddRecipeView, {router: self}),
       appContainer
     );
   },
-  addRecipe: function(){
+  recipes: function(){
     ReactDOM.unmountComponentAtNode(appContainer);
 
     ReactDOM.render(
-      React.createElement(AddRecipeComponent),
+      React.createElement(RecipeListView),
       appContainer
     );
-  },
-  login: function(){
-    Parse.User.logIn("myname", "mypass", {
-      success: function(user) {
-        this.navigate('profile/' + user.id, {trigger: true}); // profile/10
-      },
-      error: function(user, error) {
-        // The login failed. Check error to see why.
-      }
-    });
-  },
+  }
 });
+
+module.exports = new Router();
