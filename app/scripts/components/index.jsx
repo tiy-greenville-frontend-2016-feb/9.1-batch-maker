@@ -8,20 +8,32 @@ var ParseReact = require('parse-react');
 
 var models = require('../models');
 
-
 // Setup parse
 Parse.initialize("tiygvl");
 Parse.serverURL = 'http://tiny-parse-server.herokuapp.com';
+
+var IngredientFormset = React.createClass({
+  render: function(){
+    return (
+      <div className="form-inline">
+        <h3>Ingredient #{this.props.count}</h3>
+        <Input ref={"qty" + this.props.count} type="text" name={"qty" + this.props.count} placeholder="qty"/>
+        <Input ref={"units" + this.props.count} type="text" name={"units" + this.props.count} placeholder="units"/>
+        <Input ref={"name" + this.props.count} type="text" name={"name" + this.props.count} placeholder="name"/>
+      </div>
+    )
+  }
+});
 
 
 var AddRecipeView = React.createClass({
   mixins: [LinkedStateMixin],
   getInitialState: function() {
-    return {title: '', notes: ''};
+    return {title: '', notes: '', ingredientCount: 2};
   },
   handleSubmit: function(event){
     event.preventDefault();
-
+    var self = this;
     var router = this.props.router;
     var recipe = new models.Recipe();
     recipe.set({
@@ -35,14 +47,36 @@ var AddRecipeView = React.createClass({
         alert('New object created with objectId: ' + recipe.id);
         var recipeIngredients = [];
 
-        ingredients.map(function(ingredient){
-          var ing = new models.Ingredient();
-          ing.set('name': ingredient.name);
-          ing.set('recipe': recipe);
-          recipeIngredients.push(ing);
-        });
+        for(var i=1; i <= self.state.ingredientCount; i++){
+          // Get ingredient formset values
+          console.log("formset: ", i, self.refs["formset"+i]);
 
-        Parse.Object.saveAll(recipeIngredients);
+          var qty = self.refs["formset"+i].refs["qty"+i].getInputDOMNode().value;
+          var units = self.refs["formset"+i].refs["units"+i].getInputDOMNode().value;
+          var name = self.refs["formset"+i].refs["name"+i].getInputDOMNode().value;
+
+          // Setup parse object (model)
+          var ingredient = new models.Ingredient();
+          ingredient.set('qty', parseInt(qty));
+          ingredient.set('units', units);
+          ingredient.set('name', name);
+          ingredient.set('recipe', recipe);
+
+          // Push parse obj to array for batch saving
+          recipeIngredients.push(ingredient);
+        }
+
+        console.log(recipeIngredients);
+
+        // Batch save all ingredients
+        Parse.Object.saveAll(recipeIngredients, {
+          success: function(list) {
+            alert('ing saved!');
+          },
+          error: function(error) {
+            console.log(error);
+          }
+        });
         router.navigate('recipes/', {trigger: true});
       },
       error: function(recipe, error) {
@@ -52,13 +86,32 @@ var AddRecipeView = React.createClass({
       }
     });
   },
+  addIngredient: function(event){
+    event.preventDefault();
+    var newCount = this.state.ingredientCount + 1;
+    this.setState({'ingredientCount': newCount});
+  },
   render: function(){
+
+    var ingredientForms = [];
+    for(var i=1; i<= this.state.ingredientCount; i++){
+      var count = i;
+      ingredientForms.push(<IngredientFormset key={count} count={count} ref={"formset"+count}/>);
+    }
+
     return (
       <form onSubmit={this.handleSubmit}>
         <Input type="text" label="Recipe Title" placeholder="Enter title" valueLink={this.linkState('title')} />
         <Input type="textarea" label="Recipe Notes" placeholder="Enter notes" valueLink={this.linkState('notes')} />
 
-        <p>Ingrediants</p>
+        <div className="col-md-6">
+          <h2>Ingredients</h2>
+        </div>
+        <div className="col-md-6 text-right">
+          <button className="btn btn-primary" onClick={this.addIngredient}>+ Add</button>
+        </div>
+
+        {ingredientForms}
 
         <ButtonInput type="submit" value="Add Recipe" />
       </form>

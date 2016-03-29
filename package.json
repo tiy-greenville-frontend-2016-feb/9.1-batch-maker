@@ -30,6 +30,7 @@
     , "backbone-react-component": "^0.10.0"
     , "parse": "1.6.14"
     , "parse-react": "0.5.1"
+    , "newforms": "0.13.2"
   },
   "scripts": {
     "html": "cp app/*.html dist/",
