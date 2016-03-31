@@ -5,6 +5,7 @@ var Input = require('react-bootstrap/lib/Input');
 var ButtonInput = require('react-bootstrap/lib/ButtonInput');
 var Parse = require('parse');
 var ParseReact = require('parse-react');
+var _ = require('underscore');
 
 var models = require('../models');
 
@@ -16,10 +17,11 @@ var IngredientFormset = React.createClass({
   render: function(){
     return (
       <div className="form-inline">
-        <h3>Ingredient #{this.props.count}</h3>
-        <Input ref={"qty" + this.props.count} type="text" name={"qty" + this.props.count} placeholder="qty"/>
-        <Input ref={"units" + this.props.count} type="text" name={"units" + this.props.count} placeholder="units"/>
-        <Input ref={"name" + this.props.count} type="text" name={"name" + this.props.count} placeholder="name"/>
+        <h3>Ingredient #{this.props.cid}</h3>
+        <Input ref={"qty" + this.props.cid} type="text" name={"qty" + this.props.cid} placeholder="qty"/>
+        <Input ref={"units" + this.props.cid} type="text" name={"units" + this.props.cid} placeholder="units"/>
+        <Input ref={"name" + this.props.cid} type="text" name={"name" + this.props.cid} placeholder="name"/>
+        <ButtonInput onClick={this.props.removeIngredient.bind(this, this.props.cid)} ref={"remove" + this.props.cid} className="btn-danger" value="Remove" />
       </div>
     )
   }
@@ -29,7 +31,7 @@ var IngredientFormset = React.createClass({
 var AddRecipeView = React.createClass({
   mixins: [LinkedStateMixin],
   getInitialState: function() {
-    return {title: '', notes: '', ingredientCount: 2};
+    return {title: '', notes: '', ingredients: []};
   },
   handleSubmit: function(event){
     event.preventDefault();
@@ -45,28 +47,31 @@ var AddRecipeView = React.createClass({
       success: function(recipe) {
         // Execute any logic that should take place after the object is saved.
         alert('New object created with objectId: ' + recipe.id);
-        var recipeIngredients = [];
+        //var recipeIngredients = [];
 
-        for(var i=1; i <= self.state.ingredientCount; i++){
+        for(var i=1; i <= self.state.ingredients.length; i++){
+
+
           // Get ingredient formset values
-          console.log("formset: ", i, self.refs["formset"+i]);
+          var ingredient = self.state.ingredients[i];
+          console.log("formset: ", ingredient.cid, self.refs["formset"+ingredient.cid]);
 
-          var qty = self.refs["formset"+i].refs["qty"+i].getInputDOMNode().value;
-          var units = self.refs["formset"+i].refs["units"+i].getInputDOMNode().value;
-          var name = self.refs["formset"+i].refs["name"+i].getInputDOMNode().value;
+          var qty = self.refs["formset"+ingredient.cid].refs["qty"+ingredient.cid].getInputDOMNode().value;
+          var units = self.refs["formset"+ingredient.cid].refs["units"+ingredient.cid].getInputDOMNode().value;
+          var name = self.refs["formset"+ingredient.cid].refs["name"+ingredient.cid].getInputDOMNode().value;
 
           // Setup parse object (model)
-          var ingredient = new models.Ingredient();
+
           ingredient.set('qty', parseInt(qty));
           ingredient.set('units', units);
           ingredient.set('name', name);
           ingredient.set('recipe', recipe);
 
           // Push parse obj to array for batch saving
-          recipeIngredients.push(ingredient);
+          //recipeIngredients.push(ingredient);
         }
 
-        console.log(recipeIngredients);
+        console.log(self.state.ingredients);
 
         // Batch save all ingredients
         Parse.Object.saveAll(recipeIngredients, {
@@ -88,16 +93,23 @@ var AddRecipeView = React.createClass({
   },
   addIngredient: function(event){
     event.preventDefault();
-    var newCount = this.state.ingredientCount + 1;
-    this.setState({'ingredientCount': newCount});
+    //var newCount = this.state.ingredientCount + 1;
+    //this.setState({'ingredientCount': newCount});
+    var ingredient = new models.Ingredient();
+    this.state.ingredients.push(ingredient);
+    this.forceUpdate();
+  },
+  removeIngredient: function(cid, event){
+    event.preventDefault();
+
+    var newIngredients = _.reject(this.state.ingredients, {'cid': cid});
+    this.setState({'ingredients': newIngredients});
   },
   render: function(){
 
-    var ingredientForms = [];
-    for(var i=1; i<= this.state.ingredientCount; i++){
-      var count = i;
-      ingredientForms.push(<IngredientFormset key={count} count={count} ref={"formset"+count}/>);
-    }
+    var ingredientForms = this.state.ingredients.map(function(ingredient, count){
+      return (<IngredientFormset key={ingredient.cid} cid={ingredient.cid} removeIngredient={this.removeIngredient} ref={"formset"+ingredient.cid}/>);
+    }.bind(this));
 
     return (
       <form onSubmit={this.handleSubmit}>
