@@ -33,6 +33,25 @@ var AddRecipeView = React.createClass({
   getInitialState: function() {
     return {title: '', notes: '', ingredients: []};
   },
+  componentWillMount: function(){
+    var self = this;
+
+    // Bail if no recipe id
+    if(!self.props.recipeId){
+      return;
+    }
+
+    var query = new Parse.Query('Recipe');
+    query.get(self.props.recipeId, {
+      success: function(recipe){
+        self.setState({
+          title: recipe.get('title'),
+          notes: recipe.get('notes'),
+          //ingredients: (new Parse.Query('Ingredient')).find()
+        });
+      }
+    });
+  },
   handleSubmit: function(event){
     event.preventDefault();
     var self = this;
@@ -133,23 +152,79 @@ var AddRecipeView = React.createClass({
 
 
 var RecipeListView = React.createClass({
-  mixins: [ParseReact.Mixin], // Enable query subscriptions
-
-  observe: function() {
-    // Subscribe to all Recipe objects, ordered by creation date
-    // The results will be available at this.data.recipes
-    return {
-      recipes: (new Parse.Query('Recipe')).descending('createdAt')
-    };
+  // mixins: [ParseReact.Mixin], // Enable query subscriptions
+  //
+  // observe: function() {
+  //   // Subscribe to all Recipe objects, ordered by creation date
+  //   // The results will be available at this.data.recipes
+  //   return {
+  //     recipes: (new Parse.Query('Recipe')).descending('createdAt')
+  //   };
+  // },
+  getInitialState: function(){
+    return {'recipes': []};
   },
+  componentWillMount: function(){
+    var self = this;
+    var query = new Parse.Query('Recipe');
 
+    query.find({
+      success: function(recipes) {
+
+        self.setState({'recipes': recipes});
+
+        // alert("Successfully retrieved " + results.length + " scores.");
+        // // Do something with the returned Parse.Object values
+        // for (var i = 0; i < results.length; i++) {
+        //   var object = results[i];
+        //   alert(object.id + ' - ' + object.get('playerName'));
+        // }
+      },
+      error: function(error) {
+        alert("Error: " + error.code + " " + error.message);
+      }
+    })
+  },
   render: function(){
+
+    var productRows = this.state.recipes.map(function(recipe){
+      return (
+        <tr key={recipe.id}>
+          <td>{recipe.get('title')}</td>
+          <td>{recipe.get('notes')}</td>
+          <td><a href={"#recipes/" + recipe.id + "/"}>Edit</a></td>
+        </tr>
+      )
+    });
+
     return (
-        <ul>
-          {this.data.recipes.map(function(recipe) {
-            return <li key={recipe.id}>{recipe.title}:: {recipe.notes}</li>;
-          })}
-        </ul>
+      <div>
+        <div className="row">
+          <div className="col-md-6"><h1>Recipes</h1></div>
+          <div className="col-md-6">
+            <a href="#recipes/add/" className="btn btn-primary">Add</a>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <td>Name</td>
+              <td>Price</td>
+              <td>Actions</td>
+            </tr>
+          </thead>
+          <tbody>
+            {productRows}
+          </tbody>
+        </table>
+          {/*
+          <ul>
+            {this.data.recipes.map(function(recipe) {
+              return <li key={recipe.id}>{recipe.title}:: {recipe.notes}</li>;
+            })}
+          </ul>
+          */}
+        </div>
       );
   }
 });

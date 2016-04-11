@@ -11,15 +11,21 @@ var appContainer = document.getElementById('app');
 var Router = Backbone.Router.extend({
   routes: {
     '': 'index', // recipe add
+    'recipes/add/': 'recipesAddEidt', // recipe add
+    'recipes/:id/': 'recipesAddEidt', // recipe edit
     'recipes/': 'recipes',  // recipe list
   },
+
   index: function(){
+    this.navigate('recipes/', {trigger: true});
+  },
+  recipesAddEidt: function(id){
     var self = this;
 
     ReactDOM.unmountComponentAtNode(appContainer);
 
     ReactDOM.render(
-      React.createElement(AddRecipeView, {router: self}),
+      React.createElement(AddRecipeView, {router: self, recipeId: id}),
       appContainer
     );
   },

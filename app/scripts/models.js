@@ -13,11 +13,11 @@ var Recipe = Parse.Object.extend("Recipe", {
 var cidCounter = 1;
 
 var Ingredient = Parse.Object.extend("Ingredient", {
-  initialize: function(){
-    this.cid = cidCounter;
-    cidCounter++;
-    //return Parse.Object.prototype.initialize();
-  }
+  // initialize: function(){
+  //   this.cid = cidCounter;
+  //   cidCounter++;
+  //   //return Parse.Object.prototype.initialize();
+  // }
 });
 
 var IngredientCollection = Backbone.Collection.extend({
