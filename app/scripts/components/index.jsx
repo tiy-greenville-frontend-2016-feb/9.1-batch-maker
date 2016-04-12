@@ -31,7 +31,7 @@ var IngredientFormset = React.createClass({
 var AddRecipeView = React.createClass({
   mixins: [LinkedStateMixin],
   getInitialState: function() {
-    return {title: '', notes: '', ingredients: []};
+    return {title: '', notes: '', ingredients: [], images: []};
   },
   componentWillMount: function(){
     var self = this;
@@ -52,14 +52,27 @@ var AddRecipeView = React.createClass({
       }
     });
   },
+  handleFile: function(event){
+    console.log('handlefile');
+    var file = event.target.files[0];
+    var images = this.state.images;
+    images.push(new Parse.File(file.name, file));
+    this.setState({'images': images});
+  },
   handleSubmit: function(event){
     event.preventDefault();
     var self = this;
     var router = this.props.router;
+    var parseImages = this.state.images.map(function(image){
+      image.save();
+      return image;
+    });
+
     var recipe = new models.Recipe();
     recipe.set({
       "title": this.state.title,
-      "notes": this.state.notes
+      "notes": this.state.notes,
+      "images": parseImages
     });
 
     recipe.save(null, {
@@ -101,6 +114,7 @@ var AddRecipeView = React.createClass({
             console.log(error);
           }
         });
+
         router.navigate('recipes/', {trigger: true});
       },
       error: function(recipe, error) {
@@ -109,6 +123,7 @@ var AddRecipeView = React.createClass({
         alert('Failed to create new object, with error code: ' + error.message);
       }
     });
+
   },
   addIngredient: function(event){
     event.preventDefault();
@@ -133,6 +148,7 @@ var AddRecipeView = React.createClass({
     return (
       <form onSubmit={this.handleSubmit}>
         <Input type="text" label="Recipe Title" placeholder="Enter title" valueLink={this.linkState('title')} />
+        <Input type="file" label="Image" onChange={this.handleFile}/>
         <Input type="textarea" label="Recipe Notes" placeholder="Enter notes" valueLink={this.linkState('notes')} />
 
         <div className="col-md-6">
@@ -188,9 +204,10 @@ var RecipeListView = React.createClass({
   render: function(){
 
     var productRows = this.state.recipes.map(function(recipe){
+      var imageUrl = recipe.get("images") ? recipe.get("images")[0].url(): '';
       return (
         <tr key={recipe.id}>
-          <td>{recipe.get('title')}</td>
+          <td><img src={imageUrl} width="40" height="40" /><br/>{recipe.get('title')}</td>
           <td>{recipe.get('notes')}</td>
           <td><a href={"#recipes/" + recipe.id + "/"}>Edit</a></td>
         </tr>
