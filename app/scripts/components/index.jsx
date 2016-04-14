@@ -27,11 +27,48 @@ var IngredientFormset = React.createClass({
   }
 });
 
-
 var AddRecipeView = React.createClass({
   mixins: [LinkedStateMixin],
   getInitialState: function() {
     return {title: '', notes: '', ingredients: [], images: []};
+  },
+  setRecipeState: function(recipe, ingredients){
+    console.log('recipe', recipe);
+    console.log('ingredients', ingredients);
+    var self = this;
+    self.setState({
+      title: recipe.get('title'),
+      notes: recipe.get('notes'),
+      ingredients: ingredients
+    });
+  },
+  getIngredientData: function(recipe){
+    var self = this;
+    var query = new Parse.Query('Ingredient');
+
+    query.equalTo('recipe', recipe);
+
+    query.find({
+      success: function(ingredients){
+        self.setRecipeState(recipe, ingredients);
+      },
+      error: function(error){
+        alert(error);
+      }
+    });
+  },
+  getRecipeData: function(){
+    var self = this;
+    var query = new Parse.Query('Recipe');
+
+    query.get(self.props.recipeId, {
+      success: function(recipe){
+        self.getIngredientData(recipe);
+      },
+      error: function(error){
+        alert(error);
+      }
+    });
   },
   componentWillMount: function(){
     var self = this;
@@ -41,16 +78,7 @@ var AddRecipeView = React.createClass({
       return;
     }
 
-    var query = new Parse.Query('Recipe');
-    query.get(self.props.recipeId, {
-      success: function(recipe){
-        self.setState({
-          title: recipe.get('title'),
-          notes: recipe.get('notes'),
-          //ingredients: (new Parse.Query('Ingredient')).find()
-        });
-      }
-    });
+    self.getRecipeData();
   },
   handleFile: function(event){
     console.log('handlefile');
@@ -61,6 +89,7 @@ var AddRecipeView = React.createClass({
   },
   handleSubmit: function(event){
     event.preventDefault();
+
     var self = this;
     var router = this.props.router;
     var parseImages = this.state.images.map(function(image){
@@ -68,7 +97,7 @@ var AddRecipeView = React.createClass({
       return image;
     });
 
-    var recipe = new models.Recipe();
+    var recipe = new models.Recipe({id: self.props.recipeId});
     recipe.set({
       "title": this.state.title,
       "notes": this.state.notes,
@@ -145,10 +174,19 @@ var AddRecipeView = React.createClass({
       return (<IngredientFormset key={ingredient.cid} cid={ingredient.cid} removeIngredient={this.removeIngredient} ref={"formset"+ingredient.cid}/>);
     }.bind(this));
 
+    console.log(this.state.images);
+
+    var imageInput;
+    if(this.state.images){
+      //imageInput = <p>{this.state.images}</p>
+    }else{
+      imageInput = <Input type="file" label="Image" onChange={this.handleFile}/>;
+    }
+
     return (
       <form onSubmit={this.handleSubmit}>
         <Input type="text" label="Recipe Title" placeholder="Enter title" valueLink={this.linkState('title')} />
-        <Input type="file" label="Image" onChange={this.handleFile}/>
+        {imageInput}
         <Input type="textarea" label="Recipe Notes" placeholder="Enter notes" valueLink={this.linkState('notes')} />
 
         <div className="col-md-6">
@@ -203,8 +241,9 @@ var RecipeListView = React.createClass({
   },
   render: function(){
 
+
     var productRows = this.state.recipes.map(function(recipe){
-      var imageUrl = recipe.get("images") ? recipe.get("images")[0].url(): '';
+      var imageUrl = recipe.get("images") && recipe.get("images")[0] ? recipe.get("images")[0].url(): '';
       return (
         <tr key={recipe.id}>
           <td><img src={imageUrl} width="40" height="40" /><br/>{recipe.get('title')}</td>
